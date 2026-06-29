@@ -1,20 +1,13 @@
 'use client';
 
 import { useState, useMemo } from 'react';
-import { computeAIx, Investor, ScoreResult } from '@/lib/aixEngine';
-// Simulation de l'import des données (pense à bien générer ton investors.json)
+import { computeAIx, Investor } from '@/lib/aixEngine';
 import investorsData from '@/data/investors.json';
 
-type ScoredInvestor = Investor & { scoreDetails: ScoreResult };
-
 export default function Home() {
-  // 1. États du formulaire (Inputs)
   const [targetRaise, setTargetRaise] = useState<number>(800000);
   const [targetCountry, setTargetCountry] = useState<string>('France');
-  const [selectedStage, setSelectedStage] = useState<string>('seed');
-  const [isStrict, setIsStrict] = useState<boolean>(false);
 
-  // 2. Calcul dynamique et tri des VCs (Calculé à chaque changement d'input)
   const processedVCs = useMemo(() => {
     const list = investorsData as Investor[];
     
@@ -23,18 +16,16 @@ export default function Home() {
         const scoreDetails = computeAIx(vc, targetRaise, targetCountry);
         return { ...vc, scoreDetails };
       })
-      .filter((vc) => vc.scoreDetails.tier !== 'U') // On écarte le Tier U de l'affichage principal
+      .filter((vc) => vc.scoreDetails.tier !== 'U')
       .sort((a, b) => b.scoreDetails.finalScore - a.scoreDetails.finalScore);
-  }, [targetRaise, targetCountry, isStrict]);
+  }, [targetRaise, targetCountry]);
 
-  // 3. Séparation par Tiers pour le Dashboard
   const tierA = processedVCs.filter((vc) => vc.scoreDetails.tier === 'A');
   const tierB = processedVCs.filter((vc) => vc.scoreDetails.tier === 'B');
   const tierC = processedVCs.filter((vc) => vc.scoreDetails.tier === 'C');
 
   return (
     <div className="min-h-screen bg-slate-50 text-slate-900 font-sans">
-      {/* Header */}
       <header className="bg-white border-b border-slate-200 py-6 px-8">
         <div className="max-w-7xl mx-auto flex justify-between items-center">
           <div>
@@ -48,11 +39,9 @@ export default function Home() {
       </header>
 
       <main className="max-w-7xl mx-auto p-8 grid grid-cols-1 lg:grid-cols-3 gap-8">
-        {/* Panneau de configuration (Inputs) */}
         <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm h-fit space-y-6">
           <h2 className="text-lg font-semibold border-b border-slate-100 pb-3">1. Round Configuration</h2>
           
-          {/* Target Raise */}
           <div>
             <label className="block text-sm font-medium text-slate-700 mb-2">Target Raise (€ / CHF)</label>
             <input
@@ -63,7 +52,6 @@ export default function Home() {
             />
           </div>
 
-          {/* Target Country */}
           <div>
             <label className="block text-sm font-medium text-slate-700 mb-2">Target Country</label>
             <select
@@ -78,25 +66,9 @@ export default function Home() {
               <option value="Germany">Germany 🇩🇪</option>
             </select>
           </div>
-
-          {/* HQ Strict Toggle */}
-          <div className="flex items-center justify-between p-3 bg-slate-50 rounded-xl">
-            <div>
-              <span className="block text-sm font-medium text-slate-800">Strict HQ Mode</span>
-              <span className="block text-xs text-slate-500">Require local headquarters</span>
-            </div>
-            <input
-              type="checkbox"
-              checked={isStrict}
-              onChange={(e) => setIsStrict(e.target.checked)}
-              className="w-4 h-4 text-indigo-600 border-slate-300 rounded focus:ring-indigo-500"
-            />
-          </div>
         </div>
 
-        {/* Panneau des résultats (Outputs) */}
         <div className="lg:col-span-2 space-y-6">
-          {/* Résumé des Tiers */}
           <div className="grid grid-cols-3 gap-4">
             <div className="bg-emerald-50 border border-emerald-200 p-4 rounded-xl text-center">
               <span className="block text-2xl font-bold text-emerald-700">{tierA.length}</span>
@@ -112,7 +84,6 @@ export default function Home() {
             </div>
           </div>
 
-          {/* Liste des VCs Triés */}
           <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
             <div className="px-6 py-4 border-b border-slate-100 bg-slate-50 flex justify-between items-center">
               <h3 className="font-semibold text-slate-800">Prioritized Investors Pipeline</h3>
