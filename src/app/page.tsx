@@ -1,8 +1,8 @@
 'use client';
 
 import { useState, useMemo } from 'react';
-import { computeAIx, Investor } from '@/lib/aixEngine';
-import investorsData from '@/data/investors.json';
+import { computeAIx, Investor } from '../lib/aixEngine';
+import investorsData from '../data/investors.json';
 
 export default function Home() {
   const [targetRaise, setTargetRaise] = useState<number>(800000);
