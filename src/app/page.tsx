@@ -4,15 +4,59 @@ import { useState, useMemo } from 'react';
 import { computeAIx, Investor } from '../lib/aixEngine';
 import investorsData from '../data/investors.json';
 
+// Helper interne pour parser l'argent directement en cours d'exécution (ex: "$250k" -> 250000)
+function parseMoneyTS(txt: any): number {
+  if (!txt) return 0;
+  let s = String(txt).toLowerCase().trim();
+  const tokens = ["eur", "chf", "usd", "gbp", "€", "$", "£"];
+  tokens.forEach(tok => { s = s.replaceAll(tok, ""); });
+  s = s.replace(/\s+/g, "");
+  
+  let unit: string | null = null;
+  if (s.endswith("m")) { unit = "m"; s = s.slice(0, -1); }
+  else if (s.endswith("k")) { unit = "k"; s = s.slice(0, -1); }
+  
+  s = s.replace(/[, ](?=\d{3}\b)/g, ""); // Séparateur de milliers
+  s = s.replace(",", ".");
+  
+  let val = parseFloat(s);
+  if (isNaN(val)) {
+    const digits = s.replace(/[^\d.]/g, "");
+    val = parseFloat(digits) || 0;
+  }
+  
+  if (unit === "m") val *= 1000000;
+  if (unit === "k") val *= 1000;
+  return Math.round(val);
+}
+
 export default function Home() {
   const [targetRaise, setTargetRaise] = useState<number>(800000);
   const [targetCountry, setTargetCountry] = useState<string>('France');
 
+  // Nettoyage et calcul dynamique à partir du JSON brut d'OpenVC
   const processedVCs = useMemo(() => {
-    const list = investorsData as Investor[];
+    // On force le cast en n'importe quoi (any) pour contourner le blocage TypeScript sur le JSON brut
+    const rawList = investorsData as any[];
     
-    return list
-      .map((vc) => {
+    return rawList
+      .filter((row) => {
+        const invType = String(row["Investor type"] || "").trim().toLowerCase();
+        return invType === "vc" || invType === "corporate vc";
+      })
+      .map((row) => {
+        // On reconstruit l'objet Investor propre attendu par le moteur de calcul
+        const vc: Investor = {
+          name: String(row["Investor name"] || "").trim(),
+          website: String(row["Website"] || "").trim(),
+          type: String(row["Investor type"] || "").trim().toLowerCase(),
+          hq: String(row["Global HQ"] || "").trim(),
+          countries: String(row["Countries of investment"] || "").trim(),
+          stage: String(row["Stage of investment"] || "").trim(),
+          minCheque: parseMoneyTS(row["First cheque minimum"]),
+          maxCheque: parseMoneyTS(row["First cheque maximum"]),
+        };
+        
         const scoreDetails = computeAIx(vc, targetRaise, targetCountry);
         return { ...vc, scoreDetails };
       })
