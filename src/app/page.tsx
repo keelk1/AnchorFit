@@ -13,8 +13,9 @@ function parseMoneyTS(txt: any): number {
   s = s.replace(/\s+/g, "");
   
   let unit: string | null = null;
-  if (s.endswith("m")) { unit = "m"; s = s.slice(0, -1); }
-  else if (s.endswith("k")) { unit = "k"; s = s.slice(0, -1); }
+  // CORRECTION ICI : .endsWith avec un E majuscule pour JavaScript/TypeScript
+  if (s.endsWith("m")) { unit = "m"; s = s.slice(0, -1); }
+  else if (s.endsWith("k")) { unit = "k"; s = s.slice(0, -1); }
   
   s = s.replace(/[, ](?=\d{3}\b)/g, ""); // Séparateur de milliers
   s = s.replace(",", ".");
@@ -36,7 +37,6 @@ export default function Home() {
 
   // Nettoyage et calcul dynamique à partir du JSON brut d'OpenVC
   const processedVCs = useMemo(() => {
-    // On force le cast en n'importe quoi (any) pour contourner le blocage TypeScript sur le JSON brut
     const rawList = investorsData as any[];
     
     return rawList
@@ -45,7 +45,6 @@ export default function Home() {
         return invType === "vc" || invType === "corporate vc";
       })
       .map((row) => {
-        // On reconstruit l'objet Investor propre attendu par le moteur de calcul
         const vc: Investor = {
           name: String(row["Investor name"] || "").trim(),
           website: String(row["Website"] || "").trim(),
